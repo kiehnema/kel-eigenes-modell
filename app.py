@@ -1,69 +1,84 @@
 import streamlit as st
-from PIL import Image, ImageOps
 import numpy as np
-from keras.models import load_model
+from PIL import Image, ImageOps
+import tensorflow as tf
 
 # ----------------------------
 # 🌿 App Setup
 # ----------------------------
-st.set_page_config(page_title="🌿 Pflanzen KI", page_icon="🌱")
+st.set_page_config(page_title="🌿 Wildpflanzen KI", page_icon="🌱")
 st.title("🌿 Wildpflanzen & Bodenanalyse (Teachable Machine)")
 
-st.write("Lade ein Bild einer Pflanze hoch.")
+st.write("Lade ein Bild einer Pflanze hoch und erhalte eine Bodenanalyse.")
 
 # ----------------------------
-# 🤖 Modell laden
+# 🤖 Modell laden (STABIL)
 # ----------------------------
 @st.cache_resource
 def load_tm_model():
-    model = load_model("keras_model.h5", compile=False)
+    model = tf.keras.models.load_model("keras_Model.h5", compile=False)
     class_names = open("labels.txt", "r").readlines()
     return model, class_names
 
 model, class_names = load_tm_model()
 
 # ----------------------------
-# 🌱 Bodenlogik (DEIN SYSTEM)
+# 🧠 Normalisierung (Pflanzen vereinheitlichen)
 # ----------------------------
-category_to_soil = {
-    "stickstoffreich": "sehr nährstoffreich",
-    "stickstoffarm": "nährstoffarm",
-    "trocken": "sandig / trocken",
-    "feucht": "feuchter Boden",
-    "schattig": "humusreich / schattig"
+def normalize(label):
+    label = label.lower()
+
+    if "urtica" in label or "nettle" in label:
+        return "nettle"
+    if "taraxacum" in label or "dandelion" in label:
+        return "dandelion"
+    if "trifolium" in label or "clover" in label:
+        return "clover"
+    if "lamium" in label:
+        return "lamium"
+
+    return "unknown"
+
+# ----------------------------
+# 🌱 Bodenlogik
+# ----------------------------
+plant_to_soil = {
+    "nettle": "stickstoffreich, feucht",
+    "dandelion": "nährstoffreich",
+    "clover": "stickstoffarm",
+    "lamium": "humusreich, schattig"
 }
 
 soil_to_plants = {
-    "sehr nährstoffreich": ["Tomate", "Kohl", "Zucchini"],
-    "nährstoffarm": ["Erbsen", "Kräuter"],
-    "sandig / trocken": ["Lavendel", "Rosmarin"],
-    "feuchter Boden": ["Gurke", "Kohl"],
-    "humusreich / schattig": ["Farne", "Waldpflanzen"]
+    "stickstoffreich, feucht": ["Kohl", "Gurke"],
+    "nährstoffreich": ["Tomate", "Zucchini"],
+    "stickstoffarm": ["Erbsen", "Lavendel"],
+    "humusreich, schattig": ["Farne", "Waldpflanzen"]
 }
 
 # ----------------------------
-# 📷 Upload
+# 📷 Bild Upload
 # ----------------------------
 uploaded_file = st.file_uploader("Bild hochladen", type=["jpg", "png", "jpeg"])
 
 if uploaded_file:
 
     image = Image.open(uploaded_file).convert("RGB")
-    st.image(image, use_column_width=True)
+    st.image(image, caption="Dein Bild", use_container_width=True)
 
-    st.write("🔍 Analysiere...")
+    st.write("🔍 Analysiere Pflanze...")
 
     # ----------------------------
-    # 🧠 Bild vorbereiten
+    # 🧠 Bild vorbereiten (224x224)
     # ----------------------------
     size = (224, 224)
     image = ImageOps.fit(image, size, Image.Resampling.LANCZOS)
 
     image_array = np.asarray(image)
-    normalized_image_array = (image_array.astype(np.float32) / 127.5) - 1
+    normalized_image = (image_array.astype(np.float32) / 127.5) - 1
 
     data = np.ndarray(shape=(1, 224, 224, 3), dtype=np.float32)
-    data[0] = normalized_image_array
+    data[0] = normalized_image
 
     # ----------------------------
     # 🤖 Prediction
@@ -74,37 +89,42 @@ if uploaded_file:
     class_name = class_names[index].strip()
     confidence = prediction[0][index]
 
-    st.subheader("🌿 Ergebnis:")
-
-    st.success(f"{class_name} ({round(confidence*100,2)}%)")
+    # ----------------------------
+    # 🌿 Ergebnis anzeigen
+    # ----------------------------
+    st.subheader("🌿 KI Ergebnis")
+    st.success(f"{class_name} ({round(confidence*100, 2)}%)")
 
     # ----------------------------
-    # 🌱 Boden ableiten
+    # 🧠 Normalisieren
     # ----------------------------
-    label = class_name.lower()
+    plant = normalize(class_name)
 
-    soil = "unbekannt"
+    st.subheader("🌱 Erkannte Pflanzenkategorie")
+    st.info(plant)
 
-    for key in category_to_soil:
-        if key in label:
-            soil = category_to_soil[key]
+    # ----------------------------
+    # 🌱 Boden
+    # ----------------------------
+    soil = plant_to_soil.get(plant, "unbekannt")
 
     st.subheader("🌱 Bodenanalyse")
-    st.info(soil)
+    st.warning(soil)
 
     # ----------------------------
     # 🌿 Empfehlungen
     # ----------------------------
-    st.subheader("🌿 Pflanzenempfehlungen")
+    st.subheader("🌿 Pflanzempfehlungen")
 
-    for plant in soil_to_plants.get(soil, []):
-        st.write("🌿", plant)
+    for p in soil_to_plants.get(soil, []):
+        st.write("🌿", p)
 
     # ----------------------------
     # 💡 Erklärung
     # ----------------------------
     st.subheader("💡 Erklärung")
     st.write(
-        "Das selbst trainierte Teachable-Machine Modell erkennt eine Umweltkategorie. "
-        "Diese wird genutzt, um Bodenbedingungen und passende Pflanzen abzuleiten."
+        "Das Teachable-Machine Modell erkennt eine Pflanze. "
+        "Diese wird in eine ökologische Kategorie übersetzt, "
+        "die dann zur Bodenanalyse und Pflanzenempfehlung genutzt wird."
     )
