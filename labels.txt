@@ -1,0 +1,11 @@
+0 Brennnessel
+1 Löwenzahn
+2 Klee 
+3 Schafgarbe
+4 Thymian
+5 Kamille
+6 Distel
+7 Sumpfdotterblume
+8 Seggen
+9 Heidekraut
+10 Farn
