@@ -16,7 +16,7 @@ st.write("Lade ein Bild einer Pflanze hoch und erhalte eine Bodenanalyse.")
 # ----------------------------
 @st.cache_resource
 def load_tm_model():
-    model = tf.keras.models.load_model("keras_Model.h5", compile=False)
+    model = tf.keras.models.load_model("keras_model.h5", compile=False)
     class_names = open("labels.txt", "r").readlines()
     return model, class_names
 
