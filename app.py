@@ -2,6 +2,14 @@ import streamlit as st
 import tensorflow as tf
 from PIL import Image, ImageOps
 import numpy as np
+from supabase import create_client
+
+# =============================
+# SUPABASE
+# =============================
+SUPABASE_URL = st.secrets["SUPABASE_URL"]
+SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # =============================
 # SEITE
@@ -11,7 +19,7 @@ st.set_page_config(page_title="🌿 Pflanzen KI", layout="centered")
 st.title("🌿 Pflanzen & Bodenanalyse")
 
 # =============================
-# MODELL LADEN (WIE BEI DIR)
+# MODELL LADEN
 # =============================
 @st.cache_resource
 def load_model_and_labels():
@@ -23,38 +31,44 @@ def load_model_and_labels():
 model, class_names = load_model_and_labels()
 
 # =============================
-# NORMALISIERUNG
+# NORMALISIERUNG (DEIN SYSTEM)
 # =============================
 def normalize(label):
     label = label.lower()
 
-    if "urtica" in label:
+    if "brennnessel" in label or "urtica" in label:
         return "brennnessel"
-    if "taraxacum" in label:
+    if "löwenzahn" in label or "taraxacum" in label:
         return "loewenzahn"
-    if "trifolium" in label:
+    if "klee" in label or "trifolium" in label:
         return "klee"
     if "lamium" in label:
         return "taubnessel"
+    if "schafgarbe" in label:
+        return "schafgarbe"
+    if "thymian" in label:
+        return "thymian"
+    if "kamille" in label:
+        return "kamille"
+    if "distel" in label:
+        return "distel"
+    if "farn" in label:
+        return "farn"
 
     return "unbekannt"
 
 # =============================
-# BODENLOGIK
+# SUPABASE ABFRAGE
 # =============================
-plant_to_soil = {
-    "brennnessel": "stickstoffreich, feucht",
-    "loewenzahn": "nährstoffreich",
-    "klee": "stickstoffarm",
-    "taubnessel": "humusreich, schattig"
-}
+def get_plant_data(plant_key):
+    res = supabase.table("plants") \
+        .select("*") \
+        .eq("plant_key", plant_key) \
+        .execute()
 
-soil_to_plants = {
-    "stickstoffreich, feucht": ["Kohl", "Gurke"],
-    "nährstoffreich": ["Tomate", "Zucchini"],
-    "stickstoffarm": ["Erbsen", "Lavendel"],
-    "humusreich, schattig": ["Farne", "Waldpflanzen"]
-}
+    if res.data:
+        return res.data[0]
+    return None
 
 # =============================
 # UPLOAD
@@ -67,7 +81,7 @@ if uploaded_file is not None:
     st.image(image, caption="Dein Bild", use_column_width=True)
 
     # ----------------------------
-    # PREPROCESSING (IDENTISCH)
+    # PREPROCESSING
     # ----------------------------
     size = (224, 224)
     image = ImageOps.fit(image, size, Image.Resampling.LANCZOS)
@@ -85,32 +99,34 @@ if uploaded_file is not None:
         prediction = model.predict(data)
 
     index = np.argmax(prediction)
-    class_name = class_names[index].strip()
+    raw_label = class_names[index].strip()
     confidence = float(prediction[0][index])
 
-    st.success(f"🌿 Erkannt: {class_name}")
+    st.success(f"🌿 Erkannt: {raw_label}")
     st.write(f"Sicherheit: {round(confidence*100, 2)} %")
 
     # ----------------------------
-    # KATEGORIE
+    # NORMALISIERUNG
     # ----------------------------
-    plant = normalize(class_name)
+    plant_key = normalize(raw_label)
 
-    st.subheader("🌱 Kategorie")
-    st.info(plant)
-
-    # ----------------------------
-    # BODEN
-    # ----------------------------
-    soil = plant_to_soil.get(plant, "unbekannt")
-
-    st.subheader("🌱 Bodenanalyse")
-    st.warning(soil)
+    st.subheader("🌱 Erkannte Pflanzenklasse")
+    st.info(plant_key)
 
     # ----------------------------
-    # EMPFEHLUNG
+    # SUPABASE DATEN LADEN
     # ----------------------------
-    st.subheader("🌿 Pflanzenempfehlungen")
+    plant_data = get_plant_data(plant_key)
 
-    for p in soil_to_plants.get(soil, []):
-        st.write("🌿", p)
+    if plant_data:
+
+        st.subheader("🌱 Bodenanalyse (aus Datenbank)")
+        st.write("Boden:", plant_data["soil"])
+        st.write("Feuchtigkeit:", plant_data["moisture"])
+        st.write("Sonne:", plant_data["sun"])
+
+        st.subheader("🌿 Empfehlungen")
+        st.success(plant_data["recommendations"])
+
+    else:
+        st.warning("Keine Daten in Supabase gefunden für diese Pflanze")
