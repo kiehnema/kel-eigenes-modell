@@ -114,9 +114,20 @@ if uploaded_file is not None:
     st.info(plant_key)
 
     # ----------------------------
-    # SUPABASE DATEN LADEN
+    # SUPABASE DATEN LADEN + DEBUG
     # ----------------------------
-    plant_data = get_plant_data(plant_key)
+
+    st.write("DEBUG raw_label:", raw_label)
+    st.write("DEBUG plant_key:", plant_key)
+
+    res = supabase.table("plants") \
+        .select("*") \
+        .eq("plant_key", plant_key) \
+        .execute()
+
+    st.write("DEBUG Supabase response:", res)
+
+    plant_data = res.data[0] if res.data else None
 
     if plant_data:
 
@@ -129,5 +140,4 @@ if uploaded_file is not None:
         st.success(plant_data["recommendations"])
 
     else:
-        st.warning("Keine Daten in Supabase gefunden für diese Pflanze")
-
+        st.warning("❌ Keine Daten in Supabase gefunden für diese Pflanze")
