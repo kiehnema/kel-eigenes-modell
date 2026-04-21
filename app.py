@@ -7,8 +7,7 @@ import tensorflow as tf
 # 🌿 App Setup
 # ----------------------------
 st.set_page_config(page_title="🌿 Wildpflanzen KI", page_icon="🌱")
-st.title("🌿 Wildpflanzen & Bodenanalyse (Teachable Machine)")
-
+st.title("🌿 Wildpflanzen & Bodenanalyse")
 st.write("Lade ein Bild einer Pflanze hoch und erhalte eine Bodenanalyse.")
 
 # ----------------------------
@@ -16,37 +15,37 @@ st.write("Lade ein Bild einer Pflanze hoch und erhalte eine Bodenanalyse.")
 # ----------------------------
 @st.cache_resource
 def load_tm_model():
-    model = tf.keras.models.load_model("keras_model.h5", compile=False)
+    model = tf.keras.models.load_model("keras_Model.h5", compile=False)
     class_names = open("labels.txt", "r").readlines()
     return model, class_names
 
 model, class_names = load_tm_model()
 
 # ----------------------------
-# 🧠 Normalisierung (Pflanzen vereinheitlichen)
+# 🧠 Normalisierung
 # ----------------------------
 def normalize(label):
     label = label.lower()
 
     if "urtica" in label or "nettle" in label:
-        return "nettle"
+        return "brennnessel"
     if "taraxacum" in label or "dandelion" in label:
-        return "dandelion"
+        return "loewenzahn"
     if "trifolium" in label or "clover" in label:
-        return "clover"
+        return "klee"
     if "lamium" in label:
-        return "lamium"
+        return "taubnessel"
 
-    return "unknown"
+    return "unbekannt"
 
 # ----------------------------
 # 🌱 Bodenlogik
 # ----------------------------
 plant_to_soil = {
-    "nettle": "stickstoffreich, feucht",
-    "dandelion": "nährstoffreich",
-    "clover": "stickstoffarm",
-    "lamium": "humusreich, schattig"
+    "brennnessel": "stickstoffreich, feucht",
+    "loewenzahn": "nährstoffreich",
+    "klee": "stickstoffarm",
+    "taubnessel": "humusreich, schattig"
 }
 
 soil_to_plants = {
@@ -57,7 +56,7 @@ soil_to_plants = {
 }
 
 # ----------------------------
-# 📷 Bild Upload
+# 📷 Upload
 # ----------------------------
 uploaded_file = st.file_uploader("Bild hochladen", type=["jpg", "png", "jpeg"])
 
@@ -66,10 +65,10 @@ if uploaded_file:
     image = Image.open(uploaded_file).convert("RGB")
     st.image(image, caption="Dein Bild", use_container_width=True)
 
-    st.write("🔍 Analysiere Pflanze...")
+    st.write("🔍 Analysiere...")
 
     # ----------------------------
-    # 🧠 Bild vorbereiten (224x224)
+    # 🧠 Bild vorbereiten
     # ----------------------------
     size = (224, 224)
     image = ImageOps.fit(image, size, Image.Resampling.LANCZOS)
@@ -90,17 +89,17 @@ if uploaded_file:
     confidence = prediction[0][index]
 
     # ----------------------------
-    # 🌿 Ergebnis anzeigen
+    # 🌿 Ergebnis
     # ----------------------------
     st.subheader("🌿 KI Ergebnis")
     st.success(f"{class_name} ({round(confidence*100, 2)}%)")
 
     # ----------------------------
-    # 🧠 Normalisieren
+    # 🧠 Kategorie
     # ----------------------------
     plant = normalize(class_name)
 
-    st.subheader("🌱 Erkannte Pflanzenkategorie")
+    st.subheader("🌱 Pflanzenkategorie")
     st.info(plant)
 
     # ----------------------------
@@ -124,7 +123,6 @@ if uploaded_file:
     # ----------------------------
     st.subheader("💡 Erklärung")
     st.write(
-        "Das Teachable-Machine Modell erkennt eine Pflanze. "
-        "Diese wird in eine ökologische Kategorie übersetzt, "
-        "die dann zur Bodenanalyse und Pflanzenempfehlung genutzt wird."
+        "Das Modell erkennt eine Pflanze. Diese wird einer Kategorie zugeordnet, "
+        "aus der Bodenbedingungen und passende Pflanzen abgeleitet werden."
     )
