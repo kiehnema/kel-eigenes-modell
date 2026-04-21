@@ -131,10 +131,3 @@ if uploaded_file is not None:
     else:
         st.warning("Keine Daten in Supabase gefunden für diese Pflanze")
 
-res = supabase.table("plants") \
-    .select("*") \
-    .eq("plant_key", plant_key) \
-    .execute()
-
-st.write("DEBUG plant_key:", plant_key)
-st.write("DEBUG response:", res)
