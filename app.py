@@ -1,46 +1,47 @@
 import streamlit as st
-import numpy as np
-from PIL import Image, ImageOps
 import tensorflow as tf
+from PIL import Image, ImageOps
+import numpy as np
 
-# ----------------------------
-# 🌿 App Setup
-# ----------------------------
-st.set_page_config(page_title="🌿 Wildpflanzen KI", page_icon="🌱")
-st.title("🌿 Wildpflanzen & Bodenanalyse")
-st.write("Lade ein Bild einer Pflanze hoch und erhalte eine Bodenanalyse.")
+# =============================
+# SEITE
+# =============================
+st.set_page_config(page_title="🌿 Pflanzen KI", layout="centered")
 
-# ----------------------------
-# 🤖 Modell laden (STABIL)
-# ----------------------------
+st.title("🌿 Pflanzen & Bodenanalyse")
+
+# =============================
+# MODELL LADEN (WIE BEI DIR)
+# =============================
 @st.cache_resource
-def load_tm_model():
+def load_model_and_labels():
     model = tf.keras.models.load_model("keras_model.h5", compile=False)
-    class_names = open("labels.txt", "r").readlines()
+    with open("labels.txt", "r") as f:
+        class_names = f.readlines()
     return model, class_names
 
-model, class_names = load_tm_model()
+model, class_names = load_model_and_labels()
 
-# ----------------------------
-# 🧠 Normalisierung
-# ----------------------------
+# =============================
+# NORMALISIERUNG
+# =============================
 def normalize(label):
     label = label.lower()
 
-    if "urtica" in label or "nettle" in label:
+    if "urtica" in label:
         return "brennnessel"
-    if "taraxacum" in label or "dandelion" in label:
+    if "taraxacum" in label:
         return "loewenzahn"
-    if "trifolium" in label or "clover" in label:
+    if "trifolium" in label:
         return "klee"
     if "lamium" in label:
         return "taubnessel"
 
     return "unbekannt"
 
-# ----------------------------
-# 🌱 Bodenlogik
-# ----------------------------
+# =============================
+# BODENLOGIK
+# =============================
 plant_to_soil = {
     "brennnessel": "stickstoffreich, feucht",
     "loewenzahn": "nährstoffreich",
@@ -55,55 +56,51 @@ soil_to_plants = {
     "humusreich, schattig": ["Farne", "Waldpflanzen"]
 }
 
-# ----------------------------
-# 📷 Upload
-# ----------------------------
-uploaded_file = st.file_uploader("Bild hochladen", type=["jpg", "png", "jpeg"])
+# =============================
+# UPLOAD
+# =============================
+uploaded_file = st.file_uploader("📷 Pflanze hochladen", type=["jpg", "png", "jpeg"])
 
-if uploaded_file:
+if uploaded_file is not None:
 
     image = Image.open(uploaded_file).convert("RGB")
-    st.image(image, caption="Dein Bild", use_container_width=True)
-
-    st.write("🔍 Analysiere...")
+    st.image(image, caption="Dein Bild", use_column_width=True)
 
     # ----------------------------
-    # 🧠 Bild vorbereiten
+    # PREPROCESSING (IDENTISCH)
     # ----------------------------
     size = (224, 224)
     image = ImageOps.fit(image, size, Image.Resampling.LANCZOS)
 
     image_array = np.asarray(image)
-    normalized_image = (image_array.astype(np.float32) / 127.5) - 1
+    normalized = (image_array.astype(np.float32) / 127.5) - 1
 
     data = np.ndarray(shape=(1, 224, 224, 3), dtype=np.float32)
-    data[0] = normalized_image
+    data[0] = normalized
 
     # ----------------------------
-    # 🤖 Prediction
+    # PREDICTION
     # ----------------------------
-    prediction = model.predict(data)
+    with st.spinner("🔍 Analysiere Pflanze..."):
+        prediction = model.predict(data)
+
     index = np.argmax(prediction)
-
     class_name = class_names[index].strip()
-    confidence = prediction[0][index]
+    confidence = float(prediction[0][index])
+
+    st.success(f"🌿 Erkannt: {class_name}")
+    st.write(f"Sicherheit: {round(confidence*100, 2)} %")
 
     # ----------------------------
-    # 🌿 Ergebnis
-    # ----------------------------
-    st.subheader("🌿 KI Ergebnis")
-    st.success(f"{class_name} ({round(confidence*100, 2)}%)")
-
-    # ----------------------------
-    # 🧠 Kategorie
+    # KATEGORIE
     # ----------------------------
     plant = normalize(class_name)
 
-    st.subheader("🌱 Pflanzenkategorie")
+    st.subheader("🌱 Kategorie")
     st.info(plant)
 
     # ----------------------------
-    # 🌱 Boden
+    # BODEN
     # ----------------------------
     soil = plant_to_soil.get(plant, "unbekannt")
 
@@ -111,18 +108,9 @@ if uploaded_file:
     st.warning(soil)
 
     # ----------------------------
-    # 🌿 Empfehlungen
+    # EMPFEHLUNG
     # ----------------------------
-    st.subheader("🌿 Pflanzempfehlungen")
+    st.subheader("🌿 Pflanzenempfehlungen")
 
     for p in soil_to_plants.get(soil, []):
         st.write("🌿", p)
-
-    # ----------------------------
-    # 💡 Erklärung
-    # ----------------------------
-    st.subheader("💡 Erklärung")
-    st.write(
-        "Das Modell erkennt eine Pflanze. Diese wird einer Kategorie zugeordnet, "
-        "aus der Bodenbedingungen und passende Pflanzen abgeleitet werden."
-    )
