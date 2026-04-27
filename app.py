@@ -31,10 +31,10 @@ def load_model_and_labels():
 model, class_names = load_model_and_labels()
 
 # =============================
-# NORMALISIERUNG (DEIN SYSTEM)
+# NORMALISIERUNG
 # =============================
 def normalize(label):
-    label = label.lower()
+    label = label.lower().strip()
 
     if "brennnessel" in label or "urtica" in label:
         return "brennnessel"
@@ -54,6 +54,8 @@ def normalize(label):
         return "distel"
     if "farn" in label:
         return "farn"
+    if "heidekraut" in label:
+        return "heidekraut"
 
     return "unbekannt"
 
