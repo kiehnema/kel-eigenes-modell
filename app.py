@@ -120,6 +120,8 @@ if uploaded_file is not None:
     st.write("DEBUG raw_label:", raw_label)
     st.write("DEBUG plant_key:", plant_key)
 
+    if plant_key != "unbekannt":
+
     res = supabase.table("plants") \
         .select("*") \
         .eq("plant_key", plant_key) \
@@ -128,6 +130,10 @@ if uploaded_file is not None:
     st.write("DEBUG Supabase response:", res)
 
     plant_data = res.data[0] if res.data else None
+
+else:
+    st.warning("⚠️ Pflanze nicht erkannt → keine Datenbankabfrage")
+    plant_data = None
 
     if plant_data:
 
