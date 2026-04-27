@@ -116,20 +116,24 @@ if uploaded_file is not None:
     st.info(plant_key)
 
     # ----------------------------
-    # SUPABASE DATEN LADEN + DEBUG
+    # SUPABASE DATEN LADEN
     # ----------------------------
-   if plant_key != "unbekannt":
+    if plant_key != "unbekannt":
 
-    res = supabase.table("plants") \
-        .select("*") \
-        .eq("plant_key", plant_key) \
-        .execute()
+        res = supabase.table("plants") \
+            .select("*") \
+            .eq("plant_key", plant_key) \
+            .execute()
 
-    plant_data = res.data[0] if res.data else None
-     else:
+        plant_data = res.data[0] if res.data else None
+
+    else:
         st.warning("⚠️ Pflanze nicht erkannt → keine Datenbankabfrage")
         plant_data = None
 
+    # ----------------------------
+    # AUSGABE
+    # ----------------------------
     if plant_data:
 
         st.subheader("🌱 Bodenanalyse (aus Datenbank)")
