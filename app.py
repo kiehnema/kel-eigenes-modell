@@ -124,12 +124,12 @@ if uploaded_file is not None:
 
     if plant_key != "unbekannt":
 
-    res = supabase.table("plants") \
-        .select("*") \
-        .eq("plant_key", plant_key) \
-        .execute()
+          res = supabase.table("plants") \
+            .select("*") \
+            .eq("plant_key", plant_key) \
+            .execute()
 
-    st.write("DEBUG Supabase response:", res)
+      st.write("DEBUG Supabase response:", res)
 
     plant_data = res.data[0] if res.data else None
 
