@@ -131,7 +131,7 @@ if uploaded_file is not None:
 
           st.write("DEBUG Supabase response:", res)
 
-        plant_data = res.data[0] if res.data else None
+            plant_data = res.data[0] if res.data else None
 
 else:
     st.warning("⚠️ Pflanze nicht erkannt → keine Datenbankabfrage")
