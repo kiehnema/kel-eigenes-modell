@@ -119,26 +119,26 @@ if uploaded_file is not None:
     # ----------------------------
     if confidence >= CONFIDENCE_THRESHOLD:
         st.success(f"🌿 Erkannt: {raw_label}")
+        plant_key = normalize(raw_label)
     else:
         st.error("⚠️ Unsichere Erkennung!")
+        st.info("👉 Bitte näher aufnehmen oder bessere Beleuchtung nutzen")
+        plant_key = "unbekannt"
 
     st.write(f"Sicherheit: {round(confidence * 100, 2)} %")
 
-    if confidence < CONFIDENCE_THRESHOLD:
-        st.info("👉 Tipp: Näher rangehen, bessere Beleuchtung nutzen oder Blatt einzeln fotografieren")
-
     # ----------------------------
-    # NORMALISIERUNG
+    # NUR BEI SICHERER ERKENNUNG
     # ----------------------------
-    plant_key = normalize(raw_label)
+    if confidence >= CONFIDENCE_THRESHOLD:
 
-    st.subheader("🌱 Erkannte Pflanzenklasse")
-    st.info(plant_key)
+        st.subheader("🌱 Erkannte Pflanzenklasse")
+        st.info(plant_key)
 
     # ----------------------------
     # SUPABASE DATEN LADEN
     # ----------------------------
-    if plant_key != "unbekannt" and confidence >= CONFIDENCE_THRESHOLD:
+    if plant_key != "unbekannt":
 
         plant_data = get_plant_data(plant_key)
 
