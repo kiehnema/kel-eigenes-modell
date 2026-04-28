@@ -12,6 +12,11 @@ SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # =============================
+# EINSTELLUNGEN
+# =============================
+CONFIDENCE_THRESHOLD = 0.7
+
+# =============================
 # SEITE
 # =============================
 st.set_page_config(page_title="🌿 Pflanzen KI", layout="centered")
@@ -79,16 +84,21 @@ uploaded_file = st.file_uploader("📷 Pflanze hochladen", type=["jpg", "png", "
 
 if uploaded_file is not None:
 
-    image = Image.open(uploaded_file).convert("RGB")
+    try:
+        image = Image.open(uploaded_file).convert("RGB")
+    except:
+        st.error("❌ Bild konnte nicht geladen werden.")
+        st.stop()
+
     st.image(image, caption="Dein Bild", use_column_width=True)
 
     # ----------------------------
     # PREPROCESSING
     # ----------------------------
     size = (224, 224)
-    image = ImageOps.fit(image, size, Image.Resampling.LANCZOS)
+    image_model = ImageOps.fit(image, size, Image.Resampling.LANCZOS)
 
-    image_array = np.asarray(image)
+    image_array = np.asarray(image_model)
     normalized = (image_array.astype(np.float32) / 127.5) - 1
 
     data = np.ndarray(shape=(1, 224, 224, 3), dtype=np.float32)
@@ -104,8 +114,18 @@ if uploaded_file is not None:
     raw_label = class_names[index].strip()
     confidence = float(prediction[0][index])
 
-    st.success(f"🌿 Erkannt: {raw_label}")
-    st.write(f"Sicherheit: {round(confidence*100, 2)} %")
+    # ----------------------------
+    # CONFIDENCE LOGIK
+    # ----------------------------
+    if confidence >= CONFIDENCE_THRESHOLD:
+        st.success(f"🌿 Erkannt: {raw_label}")
+    else:
+        st.error("⚠️ Unsichere Erkennung!")
+
+    st.write(f"Sicherheit: {round(confidence * 100, 2)} %")
+
+    if confidence < CONFIDENCE_THRESHOLD:
+        st.info("👉 Tipp: Näher rangehen, bessere Beleuchtung nutzen oder Blatt einzeln fotografieren")
 
     # ----------------------------
     # NORMALISIERUNG
@@ -118,17 +138,12 @@ if uploaded_file is not None:
     # ----------------------------
     # SUPABASE DATEN LADEN
     # ----------------------------
-    if plant_key != "unbekannt":
+    if plant_key != "unbekannt" and confidence >= CONFIDENCE_THRESHOLD:
 
-        res = supabase.table("plants") \
-            .select("*") \
-            .eq("plant_key", plant_key) \
-            .execute()
-
-        plant_data = res.data[0] if res.data else None
+        plant_data = get_plant_data(plant_key)
 
     else:
-        st.warning("⚠️ Pflanze nicht erkannt → keine Datenbankabfrage")
+        st.warning("⚠️ Keine sichere Erkennung → keine Bodenanalyse")
         plant_data = None
 
     # ----------------------------
