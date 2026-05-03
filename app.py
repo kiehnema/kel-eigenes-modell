@@ -5,6 +5,63 @@ import numpy as np
 from supabase import create_client
 
 # =============================
+# CONFIG
+# =============================
+st.set_page_config(page_title="RootWise", layout="wide")
+
+# =============================
+# STYLE
+# =============================
+st.markdown("""
+<style>
+
+/* Hintergrund */
+.stApp {
+    background-color: #E8F5E9;
+}
+
+/* Titel */
+h1, h2, h3 {
+    color: black;
+}
+
+/* Buttons (Rosa) */
+.stButton>button {
+    background-color: #F8BBD0;
+    color: black;
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-size: 16px;
+    border: none;
+}
+
+/* Upload Feld */
+.stFileUploader {
+    border: 2px dashed #90CAF9;
+    padding: 15px;
+    border-radius: 10px;
+}
+
+/* Info Boxen (Blau) */
+div[data-testid="stInfo"] {
+    background-color: #E3F2FD;
+    border-radius: 10px;
+}
+
+/* Success leicht grün */
+div[data-testid="stSuccess"] {
+    border-radius: 10px;
+}
+
+/* Warning */
+div[data-testid="stWarning"] {
+    border-radius: 10px;
+}
+
+</style>
+""", unsafe_allow_html=True)
+
+# =============================
 # SUPABASE
 # =============================
 SUPABASE_URL = st.secrets["SUPABASE_URL"]
@@ -14,14 +71,17 @@ supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 # =============================
 # EINSTELLUNGEN
 # =============================
-CONFIDENCE_THRESHOLD = 0.7
+HIGH_CONFIDENCE = 0.70
+MID_CONFIDENCE = 0.50
 
 # =============================
-# SEITE
+# HEADER
 # =============================
-st.set_page_config(page_title="🌿 Pflanzen KI", layout="centered")
+st.title("🌿 RootWise")
+st.subheader("Wildpflanzen scannen. Boden verstehen.")
 
-st.title("🌿 Pflanzen & Bodenanalyse")
+st.markdown("### 📸 Wildpflanze scannen")
+st.caption("Blatt und Blüte möglichst klar sichtbar fotografieren")
 
 # =============================
 # MODELL LADEN
@@ -65,7 +125,7 @@ def normalize(label):
     return "unbekannt"
 
 # =============================
-# SUPABASE ABFRAGE
+# SUPABASE QUERY
 # =============================
 def get_plant_data(plant_key):
     res = supabase.table("plants") \
@@ -80,8 +140,14 @@ def get_plant_data(plant_key):
 # =============================
 # UPLOAD
 # =============================
-uploaded_file = st.file_uploader("📷 Pflanze hochladen", type=["jpg", "png", "jpeg"])
+uploaded_file = st.file_uploader(
+    "📷 Pflanze hochladen",
+    type=["jpg", "png", "jpeg"]
+)
 
+# =============================
+# PROCESS
+# =============================
 if uploaded_file is not None:
 
     try:
@@ -90,11 +156,12 @@ if uploaded_file is not None:
         st.error("❌ Bild konnte nicht geladen werden.")
         st.stop()
 
-    st.image(image, caption="Dein Bild", use_column_width=True)
+    col1, col2 = st.columns([1,1])
 
-    # ----------------------------
+    with col1:
+        st.image(image, caption="Dein Bild", use_column_width=True)
+
     # PREPROCESSING
-    # ----------------------------
     size = (224, 224)
     image_model = ImageOps.fit(image, size, Image.Resampling.LANCZOS)
 
@@ -104,60 +171,105 @@ if uploaded_file is not None:
     data = np.ndarray(shape=(1, 224, 224, 3), dtype=np.float32)
     data[0] = normalized
 
-    # ----------------------------
-    # PREDICTION
-    # ----------------------------
-    with st.spinner("🔍 Analysiere Pflanze..."):
-        prediction = model.predict(data)
+    # ANALYSE TEXT (bleibt wie gewünscht)
+    with col2:
+        st.markdown("### 🔍 Analyse läuft...")
+        st.caption("Erkenne Wildpflanze → leite Boden ab → gebe Empfehlungen")
+
+        with st.spinner("Analysiere Pflanze..."):
+            prediction = model.predict(data)
 
     index = np.argmax(prediction)
     raw_label = class_names[index].strip()
     confidence = float(prediction[0][index])
 
-    # ----------------------------
-    # CONFIDENCE LOGIK
-    # ----------------------------
-    if confidence >= CONFIDENCE_THRESHOLD:
-        st.success(f"🌿 Erkannt: {raw_label}")
-        plant_key = normalize(raw_label)
-    else:
-        st.error("⚠️ Unsichere Erkennung!")
-        st.info("👉 Bitte näher aufnehmen oder bessere Beleuchtung nutzen")
-        plant_key = "unbekannt"
+    plant_key = normalize(raw_label)
 
-    st.write(f"Sicherheit: {round(confidence * 100, 2)} %")
+    st.markdown("---")
 
-    # ----------------------------
-    # NUR BEI SICHERER ERKENNUNG
-    # ----------------------------
-    if confidence >= CONFIDENCE_THRESHOLD:
+    # MODEL INFO
+    st.write(f"🔎 Modell erkennt: **{raw_label}**")
+    st.progress(confidence)
+    st.caption(f"Sicherheit: {round(confidence * 100, 1)} %")
 
-        st.subheader("🌱 Erkannte Pflanzenklasse")
-        st.info(plant_key)
+    # =============================
+    # HOHE SICHERHEIT
+    # =============================
+    if confidence >= HIGH_CONFIDENCE and plant_key != "unbekannt":
 
-    # ----------------------------
-    # SUPABASE DATEN LADEN
-    # ----------------------------
-    if plant_key != "unbekannt":
+        st.success(f"🌿 Sicher erkannt: {plant_key}")
 
         plant_data = get_plant_data(plant_key)
 
+        if plant_data:
+            st.markdown("### 🌱 Bodenanalyse")
+
+            col1, col2, col3 = st.columns(3)
+
+            with col1:
+                st.info(f"🌍 Boden\n\n{plant_data['soil']}")
+            with col2:
+                st.info(f"💧 Feuchtigkeit\n\n{plant_data['moisture']}")
+            with col3:
+                st.info(f"☀️ Sonne\n\n{plant_data['sun']}")
+
+            st.markdown("### 🌿 Empfehlungen")
+            st.success(plant_data["recommendations"])
+
+        else:
+            st.warning("Keine Daten in Supabase gefunden.")
+
+    # =============================
+    # MITTLERE SICHERHEIT
+    # =============================
+    elif confidence >= MID_CONFIDENCE:
+
+        st.warning("⚠️ Unsichere Erkennung – mögliche Pflanzen:")
+
+        top_indices = np.argsort(prediction[0])[::-1][:3]
+
+        options = []
+        mapping = {}
+
+        for i in top_indices:
+            label = class_names[i].strip()
+            conf = float(prediction[0][i])
+            key = normalize(label)
+
+            if key != "unbekannt":
+                text = f"{key} ({round(conf*100, 1)}%)"
+                options.append(text)
+                mapping[text] = key
+
+        if options:
+            choice = st.selectbox("Welche Pflanze passt?", options)
+
+            if st.button("🌱 Auswahl bestätigen & Analyse starten"):
+                plant_key = mapping[choice]
+
+                plant_data = get_plant_data(plant_key)
+
+                if plant_data:
+                    st.markdown("### 🌱 Bodenanalyse")
+
+                    col1, col2, col3 = st.columns(3)
+
+                    with col1:
+                        st.info(f"🌍 Boden\n\n{plant_data['soil']}")
+                    with col2:
+                        st.info(f"💧 Feuchtigkeit\n\n{plant_data['moisture']}")
+                    with col3:
+                        st.info(f"☀️ Sonne\n\n{plant_data['sun']}")
+
+                    st.markdown("### 🌿 Empfehlungen")
+                    st.success(plant_data["recommendations"])
+
+        else:
+            st.error("Keine sinnvollen Vorschläge gefunden.")
+
+    # =============================
+    # NIEDRIGE SICHERHEIT (BLEIBT)
+    # =============================
     else:
-        st.warning("⚠️ Keine sichere Erkennung → keine Bodenanalyse")
-        plant_data = None
-
-    # ----------------------------
-    # AUSGABE
-    # ----------------------------
-    if plant_data:
-
-        st.subheader("🌱 Bodenanalyse (aus Datenbank)")
-        st.write("Boden:", plant_data["soil"])
-        st.write("Feuchtigkeit:", plant_data["moisture"])
-        st.write("Sonne:", plant_data["sun"])
-
-        st.subheader("🌿 Empfehlungen")
-        st.success(plant_data["recommendations"])
-
-    else:
-        st.warning("❌ Keine Daten in Supabase gefunden für diese Pflanze")
+        st.error("❌ Zu unsicher erkannt (<50%)")
+        st.info("Bitte besseres Bild aufnehmen (Licht, Nähe, Fokus)")
