@@ -60,11 +60,11 @@ h1, h2, h3, h4, h5, h6, p, span, div {
 }
 
 /* =============================
-   BUTTONS (rosa)
+   BUTTONS (blasses rosa)
 ============================= */
 
 .stButton>button {
-    background-color: #F8BBD0;
+    background-color: #FADADD;
     color: black !important;
     border-radius: 10px;
     padding: 10px 16px;
@@ -73,7 +73,7 @@ h1, h2, h3, h4, h5, h6, p, span, div {
 }
 
 /* =============================
-   UPLOAD
+   FILE UPLOAD
 ============================= */
 
 .stFileUploader {
@@ -83,17 +83,30 @@ h1, h2, h3, h4, h5, h6, p, span, div {
 }
 
 /* =============================
-   RESULT CARDS (rosa Output)
+   BODENANALYSE (BLAU)
 ============================= */
 
-.result-card {
-    background-color: #F8BBD0;
+.soil-card {
+    background-color: #D6EBFF;
     padding: 15px;
     border-radius: 12px;
     margin-bottom: 10px;
     color: black;
 }
 
+/* =============================
+   EMPFEHLUNGEN (SEHR BLASSES ROSA)
+============================= */
+
+.recommendation-card {
+    background-color: #FDECEF;
+    padding: 15px;
+    border-radius: 12px;
+    margin-bottom: 10px;
+    color: black;
+}
+
+/* LABEL + VALUE */
 .label {
     font-weight: 700;
     display: block;
@@ -103,24 +116,6 @@ h1, h2, h3, h4, h5, h6, p, span, div {
 .value {
     font-weight: 400;
     opacity: 0.9;
-}
-
-/* =============================
-   INFO BOXES (optional fallback)
-============================= */
-
-div[data-testid="stSuccess"],
-div[data-testid="stInfo"],
-div[data-testid="stWarning"],
-div[data-testid="stError"] {
-    background-color: #F8BBD0 !important;
-    color: black !important;
-    border-radius: 10px;
-}
-
-/* CAPTION */
-.stCaption {
-    color: black !important;
 }
 
 </style>
@@ -272,7 +267,7 @@ if uploaded_file is not None:
 
             with col1:
                 st.markdown(f"""
-                <div class="result-card">
+                <div class="soil-card">
                     <span class="label">Boden</span>
                     <span class="value">{plant_data['soil']}</span>
                 </div>
@@ -280,7 +275,7 @@ if uploaded_file is not None:
 
             with col2:
                 st.markdown(f"""
-                <div class="result-card">
+                <div class="soil-card">
                     <span class="label">Feuchtigkeit</span>
                     <span class="value">{plant_data['moisture']}</span>
                 </div>
@@ -288,7 +283,7 @@ if uploaded_file is not None:
 
             with col3:
                 st.markdown(f"""
-                <div class="result-card">
+                <div class="soil-card">
                     <span class="label">Sonne</span>
                     <span class="value">{plant_data['sun']}</span>
                 </div>
@@ -297,7 +292,7 @@ if uploaded_file is not None:
             st.markdown("### Empfehlungen")
 
             st.markdown(f"""
-            <div class="result-card">
+            <div class="recommendation-card">
                 {plant_data['recommendations']}
             </div>
             """, unsafe_allow_html=True)
@@ -343,7 +338,7 @@ if uploaded_file is not None:
 
                     with col1:
                         st.markdown(f"""
-                        <div class="result-card">
+                        <div class="soil-card">
                             <span class="label">Boden</span>
                             <span class="value">{plant_data['soil']}</span>
                         </div>
@@ -351,7 +346,7 @@ if uploaded_file is not None:
 
                     with col2:
                         st.markdown(f"""
-                        <div class="result-card">
+                        <div class="soil-card">
                             <span class="label">Feuchtigkeit</span>
                             <span class="value">{plant_data['moisture']}</span>
                         </div>
@@ -359,7 +354,7 @@ if uploaded_file is not None:
 
                     with col3:
                         st.markdown(f"""
-                        <div class="result-card">
+                        <div class="soil-card">
                             <span class="label">Sonne</span>
                             <span class="value">{plant_data['sun']}</span>
                         </div>
@@ -368,7 +363,7 @@ if uploaded_file is not None:
                     st.markdown("### Empfehlungen")
 
                     st.markdown(f"""
-                    <div class="result-card">
+                    <div class="recommendation-card">
                         {plant_data['recommendations']}
                     </div>
                     """, unsafe_allow_html=True)
