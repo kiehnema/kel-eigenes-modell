@@ -18,44 +18,53 @@ st.markdown("""
 /* Hintergrund */
 .stApp {
     background-color: #E8F5E9;
+    color: black;
+}
+
+/* GLOBAL: Text wirklich überall schwarz */
+html, body, [class*="css"]  {
+    color: black !important;
 }
 
 /* Titel */
-h1, h2, h3 {
-    color: black;
+h1, h2, h3, h4, h5, h6, p, span, div {
+    color: black !important;
 }
 
 /* Buttons (Rosa) */
 .stButton>button {
     background-color: #F8BBD0;
-    color: black;
+    color: black !important;
     border-radius: 10px;
     padding: 10px 16px;
     font-size: 16px;
     border: none;
 }
 
-/* Upload Feld */
+/* File uploader */
 .stFileUploader {
     border: 2px dashed #90CAF9;
     padding: 15px;
     border-radius: 10px;
 }
 
-/* Info Boxen (Blau) */
+/* Info Boxen */
 div[data-testid="stInfo"] {
     background-color: #E3F2FD;
     border-radius: 10px;
+    color: black !important;
 }
 
-/* Success leicht grün */
-div[data-testid="stSuccess"] {
-    border-radius: 10px;
+/* Warning / Success Text */
+div[data-testid="stWarning"],
+div[data-testid="stSuccess"],
+div[data-testid="stError"] {
+    color: black !important;
 }
 
-/* Warning */
-div[data-testid="stWarning"] {
-    border-radius: 10px;
+/* Progress / captions */
+.stCaption {
+    color: black !important;
 }
 
 </style>
