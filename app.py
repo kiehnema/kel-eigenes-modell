@@ -26,12 +26,14 @@ html, body, [class*="css"] {
     color: black !important;
 }
 
-/* alles Text schwarz erzwingen */
 h1, h2, h3, h4, h5, h6, p, span, div {
     color: black !important;
 }
 
-/* HERO HEADER */
+/* =============================
+   HEADER
+============================= */
+
 .hero-container {
     position: sticky;
     top: 0;
@@ -57,7 +59,10 @@ h1, h2, h3, h4, h5, h6, p, span, div {
     opacity: 0.85;
 }
 
-/* BUTTONS (rosa) */
+/* =============================
+   BUTTONS (rosa)
+============================= */
+
 .stButton>button {
     background-color: #F8BBD0;
     color: black !important;
@@ -67,14 +72,43 @@ h1, h2, h3, h4, h5, h6, p, span, div {
     border: none;
 }
 
-/* FILE UPLOADER */
+/* =============================
+   UPLOAD
+============================= */
+
 .stFileUploader {
     border: 2px dashed #90CAF9;
     padding: 15px;
     border-radius: 10px;
 }
 
-/* INFO BOXEN (alles rosa) */
+/* =============================
+   RESULT CARDS (rosa Output)
+============================= */
+
+.result-card {
+    background-color: #F8BBD0;
+    padding: 15px;
+    border-radius: 12px;
+    margin-bottom: 10px;
+    color: black;
+}
+
+.label {
+    font-weight: 700;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.value {
+    font-weight: 400;
+    opacity: 0.9;
+}
+
+/* =============================
+   INFO BOXES (optional fallback)
+============================= */
+
 div[data-testid="stSuccess"],
 div[data-testid="stInfo"],
 div[data-testid="stWarning"],
@@ -100,7 +134,7 @@ SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # =============================
-# EINSTELLUNGEN
+# THRESHOLDS
 # =============================
 HIGH_CONFIDENCE = 0.70
 MID_CONFIDENCE = 0.50
@@ -116,7 +150,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.markdown("### Wildpflanze scannen")
-st.caption("Blatt und Blüte möglichst klar sichtbar fotografieren")
+st.caption("Blatt und Blüte klar sichtbar aufnehmen")
 
 # =============================
 # MODEL
@@ -204,9 +238,9 @@ if uploaded_file is not None:
     data[0] = normalized
 
     st.markdown("### Analyse läuft")
-    st.caption("Erkenne Pflanze → leite Boden ab → gebe Empfehlungen")
+    st.caption("Pflanze wird erkannt → Boden wird abgeleitet → Empfehlungen werden erstellt")
 
-    with st.spinner("Analysiere Pflanze..."):
+    with st.spinner("Analysiere..."):
         prediction = model.predict(data)
 
     index = np.argmax(prediction)
@@ -231,21 +265,42 @@ if uploaded_file is not None:
         plant_data = get_plant_data(plant_key)
 
         if plant_data:
+
             st.markdown("### Bodenanalyse")
 
             col1, col2, col3 = st.columns(3)
 
             with col1:
-                st.info(f"Boden\n\n{plant_data['soil']}")
+                st.markdown(f"""
+                <div class="result-card">
+                    <span class="label">Boden</span>
+                    <span class="value">{plant_data['soil']}</span>
+                </div>
+                """, unsafe_allow_html=True)
 
             with col2:
-                st.info(f"Feuchtigkeit\n\n{plant_data['moisture']}")
+                st.markdown(f"""
+                <div class="result-card">
+                    <span class="label">Feuchtigkeit</span>
+                    <span class="value">{plant_data['moisture']}</span>
+                </div>
+                """, unsafe_allow_html=True)
 
             with col3:
-                st.info(f"Sonne\n\n{plant_data['sun']}")
+                st.markdown(f"""
+                <div class="result-card">
+                    <span class="label">Sonne</span>
+                    <span class="value">{plant_data['sun']}</span>
+                </div>
+                """, unsafe_allow_html=True)
 
             st.markdown("### Empfehlungen")
-            st.success(plant_data["recommendations"])
+
+            st.markdown(f"""
+            <div class="result-card">
+                {plant_data['recommendations']}
+            </div>
+            """, unsafe_allow_html=True)
 
         else:
             st.warning("Keine Daten gefunden.")
@@ -273,7 +328,7 @@ if uploaded_file is not None:
                 mapping[text] = key
 
         if options:
-            choice = st.selectbox("Auswahl treffen", options)
+            choice = st.selectbox("Auswahl", options)
 
             if st.button("Bestätigen"):
                 plant_key = mapping[choice]
@@ -281,21 +336,42 @@ if uploaded_file is not None:
                 plant_data = get_plant_data(plant_key)
 
                 if plant_data:
+
                     st.markdown("### Bodenanalyse")
 
                     col1, col2, col3 = st.columns(3)
 
                     with col1:
-                        st.info(f"Boden\n\n{plant_data['soil']}")
+                        st.markdown(f"""
+                        <div class="result-card">
+                            <span class="label">Boden</span>
+                            <span class="value">{plant_data['soil']}</span>
+                        </div>
+                        """, unsafe_allow_html=True)
 
                     with col2:
-                        st.info(f"Feuchtigkeit\n\n{plant_data['moisture']}")
+                        st.markdown(f"""
+                        <div class="result-card">
+                            <span class="label">Feuchtigkeit</span>
+                            <span class="value">{plant_data['moisture']}</span>
+                        </div>
+                        """, unsafe_allow_html=True)
 
                     with col3:
-                        st.info(f"Sonne\n\n{plant_data['sun']}")
+                        st.markdown(f"""
+                        <div class="result-card">
+                            <span class="label">Sonne</span>
+                            <span class="value">{plant_data['sun']}</span>
+                        </div>
+                        """, unsafe_allow_html=True)
 
                     st.markdown("### Empfehlungen")
-                    st.success(plant_data["recommendations"])
+
+                    st.markdown(f"""
+                    <div class="result-card">
+                        {plant_data['recommendations']}
+                    </div>
+                    """, unsafe_allow_html=True)
 
         else:
             st.error("Keine Vorschläge")
