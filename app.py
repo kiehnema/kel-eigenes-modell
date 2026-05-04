@@ -166,7 +166,7 @@ def normalize(label):
     label = label.lower().strip()
 
     if "brennnessel" in label or "urtica" in label:
-        return "brennnessel"
+        return "Brennnessel"
     if "löwenzahn" in label or "taraxacum" in label:
         return "loewenzahn"
     if "klee" in label or "trifolium" in label:
