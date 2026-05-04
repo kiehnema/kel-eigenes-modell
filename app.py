@@ -30,10 +30,7 @@ h1, h2, h3, h4, h5, h6, p, span, div {
     color: black !important;
 }
 
-/* =============================
-   HEADER
-============================= */
-
+/* HEADER */
 .hero-container {
     position: sticky;
     top: 0;
@@ -59,10 +56,7 @@ h1, h2, h3, h4, h5, h6, p, span, div {
     opacity: 0.85;
 }
 
-/* =============================
-   BUTTONS (blasses rosa)
-============================= */
-
+/* BUTTONS */
 .stButton>button {
     background-color: #FADADD;
     color: black !important;
@@ -72,20 +66,14 @@ h1, h2, h3, h4, h5, h6, p, span, div {
     border: none;
 }
 
-/* =============================
-   FILE UPLOAD
-============================= */
-
+/* FILE UPLOAD */
 .stFileUploader {
     border: 2px dashed #90CAF9;
     padding: 15px;
     border-radius: 10px;
 }
 
-/* =============================
-   BODENANALYSE (BLAU)
-============================= */
-
+/* BODEN */
 .soil-card {
     background-color: #D6EBFF;
     padding: 15px;
@@ -94,10 +82,7 @@ h1, h2, h3, h4, h5, h6, p, span, div {
     color: black;
 }
 
-/* =============================
-   EMPFEHLUNGEN (SEHR BLASSES ROSA)
-============================= */
-
+/* EMPFEHLUNGEN */
 .recommendation-card {
     background-color: #FDECEF;
     padding: 15px;
@@ -106,7 +91,7 @@ h1, h2, h3, h4, h5, h6, p, span, div {
     color: black;
 }
 
-/* LABEL + VALUE */
+/* LABEL */
 .label {
     font-weight: 700;
     display: block;
@@ -186,7 +171,6 @@ def normalize(label):
     if "heidekraut" in label:
         return "heidekraut"
 
-    # 🔥 NEU HINZUGEFÜGT
     if "segge" in label or "seggen" in label or "carex" in label:
         return "seggen"
 
@@ -194,6 +178,7 @@ def normalize(label):
         return "sumpfdotterblume"
 
     return "unbekannt"
+
 # =============================
 # SUPABASE QUERY
 # =============================
@@ -220,15 +205,9 @@ uploaded_file = st.file_uploader(
 # =============================
 if uploaded_file is not None:
 
-    try:
-        image = Image.open(uploaded_file).convert("RGB")
-    except:
-        st.error("Bild konnte nicht geladen werden.")
-        st.stop()
-
+    image = Image.open(uploaded_file).convert("RGB")
     st.image(image, use_column_width=True)
 
-    # preprocessing
     size = (224, 224)
     image_model = ImageOps.fit(image, size, Image.Resampling.LANCZOS)
 
@@ -239,16 +218,18 @@ if uploaded_file is not None:
     data[0] = normalized
 
     st.markdown("### Analyse läuft")
-    st.caption("Pflanze wird erkannt → Boden wird abgeleitet → Empfehlungen werden erstellt")
 
     with st.spinner("Analysiere..."):
         prediction = model.predict(data)
 
     index = np.argmax(prediction)
-    raw_label = class_names[index].strip()
+    raw_label = class_names[index].strip().split(" ", 1)[-1]
     confidence = float(prediction[0][index])
 
     plant_key = normalize(raw_label)
+
+    # 👉 HIER IST DEIN FIX
+    display_name = plant_key.capitalize()
 
     st.markdown("---")
 
@@ -261,7 +242,7 @@ if uploaded_file is not None:
     # =============================
     if confidence >= HIGH_CONFIDENCE and plant_key != "unbekannt":
 
-        st.success(f"Sicher erkannt: {plant_key}")
+        st.success(f"Sicher erkannt: {display_name}")
 
         plant_data = get_plant_data(plant_key)
 
