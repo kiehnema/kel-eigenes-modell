@@ -186,8 +186,14 @@ def normalize(label):
     if "heidekraut" in label:
         return "heidekraut"
 
-    return "unbekannt"
+    # 🔥 NEU HINZUGEFÜGT
+    if "segge" in label or "seggen" in label or "carex" in label:
+        return "seggen"
 
+    if "sumpfdotterblume" in label or "caltha" in label or "palustris" in label:
+        return "sumpfdotterblume"
+
+    return "unbekannt"
 # =============================
 # SUPABASE QUERY
 # =============================
