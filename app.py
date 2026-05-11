@@ -365,4 +365,4 @@ if uploaded_file is not None:
 
     else:
         st.error("Zu unsicher (<50%)")
-        st.info("Bitte besseres Bild aufnehmen")
+        st.info("Bitte besseres Bild aufnehmen (Blatt und Blüte klar sichtbar)")
