@@ -206,7 +206,11 @@ uploaded_file = st.file_uploader(
 if uploaded_file is not None:
 
     image = Image.open(uploaded_file).convert("RGB")
-    st.image(image, use_column_width=True)
+
+    # ✅ kleiner + zentriert
+    col1, col2, col3 = st.columns([1,2,1])
+    with col2:
+        st.image(image, width=350)
 
     size = (224, 224)
     image_model = ImageOps.fit(image, size, Image.Resampling.LANCZOS)
@@ -217,10 +221,15 @@ if uploaded_file is not None:
     data = np.ndarray(shape=(1, 224, 224, 3), dtype=np.float32)
     data[0] = normalized
 
-    st.markdown("### Analyse läuft")
+    # ✅ placeholder statt fixer Text
+    status = st.empty()
+    status.markdown("### Analyse läuft")
 
     with st.spinner("Analysiere..."):
         prediction = model.predict(data)
+
+    # ❌ wieder entfernen
+    status.empty()
 
     index = np.argmax(prediction)
     raw_label = class_names[index].strip().split(" ", 1)[-1]
@@ -228,7 +237,6 @@ if uploaded_file is not None:
 
     plant_key = normalize(raw_label)
 
-    # 👉 HIER IST DEIN FIX
     display_name = plant_key.capitalize()
 
     st.markdown("---")
@@ -287,9 +295,6 @@ if uploaded_file is not None:
         else:
             st.warning("Keine Daten gefunden.")
 
-    # =============================
-    # MID CONFIDENCE
-    # =============================
     elif confidence >= MID_CONFIDENCE:
 
         st.warning("Unsichere Erkennung")
@@ -358,9 +363,6 @@ if uploaded_file is not None:
         else:
             st.error("Keine Vorschläge")
 
-    # =============================
-    # LOW CONFIDENCE
-    # =============================
     else:
         st.error("Zu unsicher (<50%)")
         st.info("Bitte besseres Bild aufnehmen")
